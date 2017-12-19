@@ -6,11 +6,14 @@ from selenium.common.exceptions import NoSuchElementException
 
 import cfme.tests.configure.test_access_control as tac
 from cfme import test_requirements
+from cfme.base.credential import Credential
 from cfme.services.catalogs.catalog_item import CatalogItem, CatalogBundle
+from cfme.services.service_catalogs import ServiceCatalogs
 from cfme.utils import error
 from cfme.utils.blockers import BZ
 from cfme.utils.log import logger
 from cfme.utils.update import update
+from cfme.utils.wait import wait_for
 
 pytestmark = [test_requirements.service, pytest.mark.tier(3), pytest.mark.ignore_stream("upstream")]
 
@@ -138,3 +141,33 @@ def test_tagvis_catalog_bundle(check_catalog_visibility, catalog_bundle):
             4. Login as restricted user, catalog bundle is not visible for user
         """
     check_catalog_visibility(catalog_bundle)
+
+
+def test_email_notification_manual_approval(appliance, catalog_item, smtp_test):
+    """Test email notification for manual approval of Catalog Item"""
+
+    email = 'approver@example.com'
+    user = appliance.collections.users
+    creds = Credential(principal="admin", secret="smartvm")
+    u1 = user.instantiate(name="Administrator", credential=creds)
+    u1.update({'email': email})
+    service_catalogs = ServiceCatalogs(appliance, catalog_item.catalog, catalog_item.name)
+    import ipdb;ipdb.set_trace()
+    service_catalogs.order() # Need to check UI bug while ordering catalog
+    appliance.server.settings.send_test_email(email=email)
+    wait_for(lambda: len(smtp_test.get_emails(to_address=email)) > 0, num_sec=60)
+    # TODO: smtp email thing
+    # Email can be sent and receive but stmp setup before that is needed
+    # Need to do that setup first
+    """
+    def verify():
+        return (
+            len(filter(
+                lambda mail:
+                "your virtual machine request has completed vm {}".format(normalize_text(vm_name))
+                in normalize_text(mail["subject"]),
+                smtp_test.get_emails())) == len(vm_names)
+        )
+
+    wait_for(verify, message="email receive check", delay=5)
+    """
