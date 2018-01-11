@@ -77,6 +77,7 @@ def test_zone_add_dupe(request):
         description=description)
     request.addfinalizer(zone.delete)
 
+    import ipdb;ipdb.set_trace()
     if current_appliance.version >= 5.9:
         error_flash = "Name is not unique within region 0"
     else:

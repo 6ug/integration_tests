@@ -113,7 +113,7 @@ def test_priority(
         * Copy the method to the second (copy) domain.
         * Change the copied method so it writes different data.
         * Set the domain order so the copy domain is first.
-        * Run the same simulation again.
+        * Run the same simulation again.x
         * Check the file contents, it should be the same as the content you entered last.
         * Then pick the domain order so the original domain is first.
         * Run the same simulation again.
