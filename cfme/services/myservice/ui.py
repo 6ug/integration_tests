@@ -48,25 +48,39 @@ class MyServicesView(BaseLoggedInPage):
         ACCORDION_NAME = 'Services'
         tree = ManageIQTree()
 
+    @View.nested
+    class toolbar(View):  # noqa
+        """
+         represents provider toolbar and its controls
+        """
+        configuration = Dropdown(text='Configuration')
+        policy = Dropdown(text='Policy')
+        lifecycle = Dropdown(text='Lifecycle')
+        download = Dropdown(text='Download')
+        view_selector = View.nested(ItemsToolBarViewSelector)
+
+    # TODO drop '_btn' suffix
+    title = Text('#explorer_title_text')
+    reload = Button(title=VersionPick({Version.lowest(): 'Reload current display',
+                                       '5.9': 'Refresh this page'}))
+    configuration = Dropdown('Configuration')
+    policy_btn = Dropdown('Policy')
+    lifecycle_btn = Dropdown('Lifecycle')
+    download_choice = Dropdown('Download')
+
 
 class ServiceRetirementForm(MyServicesView):
-    title = Text('#explorer_title_text')
-
     retirement_date = Calendar(VersionPick({Version.lowest(): 'retirementDate',
                                             '5.9': 'retirement_date_datepicker'}))
     retirement_warning = BootstrapSelect('retirement_warn')
 
 
 class ServiceEditForm(MyServicesView):
-    title = Text('#explorer_title_text')
-
     name = Input(name='name')
     description = Input(name='description')
 
 
 class SetOwnershipForm(MyServicesView):
-    title = Text('#explorer_title_text')
-
     select_owner = BootstrapSelect('user_name')
     select_group = BootstrapSelect('group_name')
 
@@ -82,10 +96,14 @@ class MyServiceDetailsToolbar(MyServiceToolbar):
             self._dropdown.item_select(button, handle_alert=handle_alert)
 
 
+class MyServiceEntitiesDetailView(BaseNonInteractiveEntitiesView):
+    smart_management = SummaryTable(title='Smart Management')
+
+
 class MyServiceDetailView(MyServicesView):
     title = Text('#explorer_title_text')
     toolbar = View.nested(MyServiceDetailsToolbar)
-    entities = View.nested(BaseNonInteractiveEntitiesView)
+    entities = View.nested(MyServiceEntitiesDetailView)
 
     @View.nested
     class details(Tab):  # noqa
@@ -93,7 +111,6 @@ class MyServiceDetailView(MyServicesView):
         lifecycle = SummaryTable(title='Lifecycle')
         relationships = SummaryTable(title='Relationships')
         vm = SummaryTable(title='Totals for Service VMs ')
-        smart_mgmt = SummaryTable(title='Smart Management')
 
     @View.nested
     class provisioning(Tab):  # noqa
@@ -267,6 +284,14 @@ def set_ownership(self, owner, group):
     assert view.is_displayed
     view.flash.assert_no_error()
     view.flash.assert_success_message('Ownership saved for selected Service')
+
+
+@MiqImplementationContext.external_for(MyService.get_ownership, ViaUI)
+def get_ownership(self, owner, group):
+    view = navigate_to(self, 'Details')
+    exists = (view.details.lifecycle.get_text_of("Owner") == owner and
+              view.details.lifecycle.get_text_of("Group") == group)
+    return exists
 
 
 @MiqImplementationContext.external_for(MyService.edit_tags, ViaUI)
