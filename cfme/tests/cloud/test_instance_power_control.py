@@ -17,7 +17,8 @@ pytestmark = [
     pytest.mark.tier(2),
     pytest.mark.long_running,
     test_requirements.power,
-    pytest.mark.provider([CloudProvider], scope='function', required_fields=['test_power_control'])
+    pytest.mark.provider([CloudProvider], scope='function', required_fields=[['test_power_control'],
+                                                        ['provisioning', 'stack_provisioning']])
 ]
 
 
@@ -555,3 +556,67 @@ class TestInstanceRESTAPI(object):
         soft_assert(testing_instance.wait_for_instance_state_change(desired_state=terminated_states,
             timeout=1200))
         soft_assert(self.verify_vm_power_state(vm, terminated_states), "instance not terminated")
+
+
+
+
+
+# from cfme.tests.services.test_provision_stack import stack, stack_data, test_provision_stack, dialog_name,
+from cfme.services.service_catalogs import ServiceCatalogs
+from cfme.tests.services.test_provision_stack import *
+from cfme.cloud.provider import CloudProviderInstancesView
+
+
+def test_awes(appliance, provider, provisioning, catalog, catalog_item, request, testing_instance, verify_vm_running, soft_assert):
+    """Tests stack provisioning
+    Metadata:
+        test_flag: provision
+    """
+    sd = stack_data(appliance=appliance, provider=provider, provisioning=provisioning)
+    s = appliance.collections.stacks.instantiate(sd['stack_name'], provider=provider)
+    dn = 'dialog_{}'.format(fauxfactory.gen_alphanumeric())
+    t = template(appliance=appliance, provider=provider, provisioning=provisioning, dialog_name=dn, stack=s)
+    sc = ServiceCatalogs(appliance=appliance, catalog=catalog_item.catalog, name=catalog_item.name, stack_data = sd)
+    provision_request = sc.order()
+    view = navigate_to(s, 'Details')
+    view.entities.relationships.click_at('Instances')
+    new_view = appliance.browser.create_view(CloudProviderInstancesView)
+    import ipdb; ipdb.set_trace()
+    new_view.entities.get_first_entity.check()
+
+    testing_instance.wait_for_instance_state_change(desired_state=testing_instance.STATE_ON)
+    check_power_options(soft_assert, testing_instance, 'on')
+
+    # provision_request = service_catalogs.order()
+    # provision_request.wait_for_request(method='ui')
+    # request.addfinalizer(lambda: _cleanup(appliance, provision_request))
+    # assert provision_request.is_succeeded()
+    # stack.wait_for_exists()
+
+
+
+@pytest.yield_fixture
+def catalog(appliance):
+    cat_name = "cat_{}".format(fauxfactory.gen_alphanumeric())
+    catalog = appliance.collections.catalogs.create(name=cat_name, description="my catalog")
+    yield catalog
+    if catalog.exists:
+        catalog.delete()
+
+
+@pytest.yield_fixture
+def catalog_item(dialog, catalog, template, provider, dialog_name):
+    item_name = fauxfactory.gen_alphanumeric()
+    catalog_item = CatalogItem(item_type="Orchestration",
+                               name=item_name,
+                               description="my catalog",
+                               display_in=True,
+                               catalog=catalog,
+                               dialog=dialog_name,
+                               orch_template=template,
+                               provider=provider)
+    catalog_item.create()
+    yield catalog_item
+    if catalog_item.exists:
+        catalog_item.delete()
+
