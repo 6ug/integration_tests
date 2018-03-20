@@ -82,10 +82,14 @@ class MyServiceDetailsToolbar(MyServiceToolbar):
             self._dropdown.item_select(button, handle_alert=handle_alert)
 
 
+class MyServiceEntitiesDetailView(BaseNonInteractiveEntitiesView):
+    smart_management = SummaryTable(title='Smart Management')
+
+
 class MyServiceDetailView(MyServicesView):
     title = Text('#explorer_title_text')
     toolbar = View.nested(MyServiceDetailsToolbar)
-    entities = View.nested(BaseNonInteractiveEntitiesView)
+    entities = View.nested(MyServiceEntitiesDetailView)
 
     @View.nested
     class details(Tab):  # noqa
@@ -93,7 +97,6 @@ class MyServiceDetailView(MyServicesView):
         lifecycle = SummaryTable(title='Lifecycle')
         relationships = SummaryTable(title='Relationships')
         vm = SummaryTable(title='Totals for Service VMs ')
-        smart_mgmt = SummaryTable(title='Smart Management')
 
     @View.nested
     class provisioning(Tab):  # noqa
@@ -148,6 +151,14 @@ class SetOwnershipView(SetOwnershipForm):
             self.in_myservices and
             self.myservice.is_opened and
             self.title.text == 'Set Ownership of Service "{}"'.format(self.context['object'].name))
+
+
+@MiqImplementationContext.external_for(MyService.get_ownership, ViaUI)
+def get_ownership(self, owner, group):
+    view = navigate_to(self, 'Details')
+    exists = (view.details.lifecycle.get_text_of("Owner") == owner and
+              view.details.lifecycle.get_text_of("Group") == group)
+    return exists
 
 
 class ServiceRetirementView(ServiceRetirementForm):
