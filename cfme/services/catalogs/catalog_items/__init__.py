@@ -300,7 +300,7 @@ class BaseCatalogItem(BaseEntity, Updateable, Pretty, Taggable):
 class CloudInfraCatalogItem(BaseCatalogItem):
     """Catalog items that relate to cloud and infra providers."""
     name = attr.ib()
-    prov_data = attr.ib()
+    provisioning_data = attr.ib()
     catalog = attr.ib(default=None)
     description = attr.ib(default=None)
     display_in = attr.ib(default=None)
@@ -318,7 +318,7 @@ class CloudInfraCatalogItem(BaseCatalogItem):
                 'select_catalog': getattr(self.catalog, 'name', None),
                 'select_dialog': self.dialog
             },
-            'request_info': {'provisioning': self.prov_data}
+            'request_info': {'provisioning': self.provisioning_data}
         }
 
 
