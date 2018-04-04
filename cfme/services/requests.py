@@ -259,6 +259,10 @@ class RequestBasicView(BaseLoggedInPage):
 
 
 class RequestsView(RequestBasicView):
+    approved_state = Checkbox(id="state_choice__approved")
+    denied_state = Checkbox(id="state_choice__denied")
+    pending_state = Checkbox(id="state_choice__pending_approval")
+    apply_btn = Button('Apply')
     table = Table(locator='//div[@id="gtl_div"]//table')
     paginator = PaginationPane()
 
