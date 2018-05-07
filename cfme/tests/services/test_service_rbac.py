@@ -58,21 +58,19 @@ def test_service_rbac_catalog_explorer(appliance, role_user_group, catalog,
     """ Test service rbac with only catalog explorer module permissions"""
     role, user = role_user_group
     if permission == CATALOG_MODULES[3]:
-        product_features = [[(['Everything'], True)], [(['Everything'], False)],
-                           [(['Everything', 'Services', 'Requests', ], True)],
-                           [(['Everything', 'Automation', 'Automate', 'Customization'], True)]]
-
-        role.update(
-            {'product_features': product_features.extend(
-                [(['Everything', 'Services', 'Catalogs Explorer', k], True)
-                 for k in ['Catalog Items', 'Service Catalogs', 'Catalogs']])}
-        )
+        product_features = [
+            (['Everything'], True), (['Everything'], False),
+            (['Everything', 'Services', 'Requests'], True),
+            (['Everything', 'Automation', 'Automate', 'Customization'], True)
+        ]
+        product_features.extend([(['Everything', 'Services', 'Catalogs Explorer', k], True)
+                                 for k in ['Catalog Items', 'Service Catalogs', 'Catalogs']])
+        role.update({'product_features': product_features})
     else:
-        product_features = [[(['Everything'], True)], [(['Everything'], False)]]
-        role.update(
-            {'product_features': product_features.extend(
-                [(['Everything', 'Services', 'Catalogs Explorer', k], True) for k in [permission]])}
-        )
+        product_features = [(['Everything'], True), (['Everything'], False)]
+        product_features.extend([(['Everything', 'Services', 'Catalogs Explorer', k], True)
+                                 for k in [permission]])
+        role.update({'product_features': product_features})
 
     with user:
         if permission == CATALOG_MODULES[0]:
@@ -103,15 +101,14 @@ def test_service_rbac_catalog_explorer(appliance, role_user_group, catalog,
 def test_service_rbac_request(appliance, role_user_group, catalog_item):
     """ Test service rbac with only request module permissions"""
     role, user = role_user_group
-    product_features = [[(['Everything'], True)], [(['Everything'], False)],
-                       [(['Everything', 'Services', 'Requests', ], True)],
-                       [(['Everything', 'Automation', 'Automate', 'Customization'], True)]]
-    role.update(
-        {'product_features':
-            product_features.extend(
-                [(['Everything', 'Services', 'Catalogs Explorer', k], True)
-                 for k in ['Catalog Items', 'Service Catalogs', 'Catalogs']])}
-    )
+    product_features = [
+        (['Everything'], True), (['Everything'], False),
+        (['Everything', 'Services', 'Requests', ], True),
+        (['Everything', 'Automation', 'Automate', 'Customization'], True)
+    ]
+    product_features.extend([(['Everything', 'Services', 'Catalogs Explorer', k], True)
+                             for k in ['Catalog Items', 'Service Catalogs', 'Catalogs']])
+    role.update({'product_features': product_features})
     with user:
         # Without below line, service_order only works here via admin, not via user
         # TODO: Remove below line when this behavior gets fixed
