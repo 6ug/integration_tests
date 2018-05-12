@@ -2,12 +2,13 @@ import attr
 
 from navmazing import NavigateToAttribute, NavigateToSibling
 from cfme.base.login import BaseLoggedInPage
-from widgetastic.widget import View, ConditionalSwitchableView
+from widgetastic.widget import View, ConditionalSwitchableView, Checkbox
 from widgetastic_manageiq import RadioGroup, PaginationPane, Table
 from widgetastic_patternfly import Text, TextInput, Button, BootstrapSelect
 from cfme.modeling.base import BaseCollection, BaseEntity
 from cfme.utils.appliance.implementations.ui import (navigator, CFMENavigateStep,
     can_skip_badness_test, navigate_to)
+from cfme.utils.wait import wait_for
 
 
 # Views
@@ -56,8 +57,14 @@ class AddMigrationPlanView(View):
         # This is table declaration, I am using it like
         # view = navigate_to(appliance.collections.migration.plan, 'Add')
         # view.vms.table.check_all()
-        table = Table('.//*[contains(@class, "container-fluid")]/table')
-        paginator = PaginationPane()
+        import_btn = Button('Import')
+        importcsv = Button('Import CSV')
+
+        table = Table('.//*[contains(@class, "container-fluid")]/table',
+              column_widgets={"Select": Checkbox(locator=".//input")})
+
+        # table = Table('.//*[contains(@class, "container-fluid")]/table', column_widgets={"Actions": })
+        # paginator = PaginationPane()
 
     @View.nested
     class options(View):
@@ -81,9 +88,7 @@ class AddMigrationPlanView(View):
 @attr.s
 class InfrastructureMapping(BaseEntity):
     """Class representing v2v infrastructure mappings"""
-    category = 'infrastructuremapping'
-    string_name = 'Infrastructure Mapping'
-
+    name =att.
 
 @attr.s
 class InfrastructureMappingCollection(BaseCollection):
@@ -94,7 +99,7 @@ class InfrastructureMappingCollection(BaseCollection):
 @attr.s
 class MigrationPlan(BaseEntity):
     """Class representing v2v infrastructure mappings"""
-    name = 'migrationplan'
+    name = attr.ib()
 
 @attr.s
 class MigrationPlanCollection(BaseCollection):
@@ -114,26 +119,33 @@ class MigrationPlanCollection(BaseCollection):
             view.general.select_vm.select("Import a CSV file with a list of VMs to be migrated")
         view.next_btn.click()
 
-        import ipdb;ipdb.set_trace()
+        wait_for(lambda: view.vms.table.is_displayed,
+                 timeout=60,
+                 message='Wait for VMs view',
+                 delay=2)
 
-        view.browser.element(".//div[6]/div[2]/div/div/div/div[2]/section/div/div/div/table/tbody/tr[1]/td[1]/td/input").click()
+        for row in view.vms.table.rows():
+            if row['VM Name1'].read() in vm_names:
+                row['Select'].fill(True)
+
+        # view.browser.element(".//div[6]/div[2]/div/div/div/div[2]/section/div/div/div/table/tbody/tr[1]/td[1]/td/input").click()
         view.next_btn.click()
         view.options.create_btn.click()
         view.results.close_btn.click()
+        return self.instantiate(name)
+
+        if start_migration:
+            base_message = "Migration Plan: '{}' has been saved"
 
 
-        # if start_migration:
-        #     base_message = "Migration Plan: '{}' has been saved"
-        # else:
-        #     view.options.run_migration.select("Start migration immediately")
-        #     base_message = "Migration Plan: '{}' is in progress"
-        #
-        #
-        #     # view.flash.assert_success_message(base_message.format(name))
-        #     #
-        #     # view.results.msg.(base_message.format(name))
-        #
-        # view.next_btn.click()
+        else:
+            view.options.run_migration.select("Start migration immediately")
+            base_message = "Migration Plan: '{}' is in progress"
+
+
+            # view.flash.assert_success_message(base_message.format(name))
+            #
+            # view.results.msg.(base_message.format(name))
 
 
 # Navigations
@@ -147,10 +159,6 @@ class All(CFMENavigateStep):
     def step(self):
         self.prerequisite_view.navigation.select('Compute', 'Migration')
 
-    def resetter(self):
-        """Reset the view"""
-        self.view.browser.refresh()
-
 
 @navigator.register(InfrastructureMappingCollection, 'Add')
 class AddInfrastructureMapping(CFMENavigateStep):
@@ -160,10 +168,6 @@ class AddInfrastructureMapping(CFMENavigateStep):
     def step(self):
         self.prerequisite_view.create_infrastructure_mapping.click()
 
-    @can_skip_badness_test  # because it loops over and over as it cannot handle the modal
-    def resetter(self):
-        # Reset the view
-        self.view.browser.refresh()
 
 
 @navigator.register(MigrationPlanCollection, 'Add')
@@ -173,8 +177,3 @@ class AddMigrationPlan(CFMENavigateStep):
 
     def step(self):
         self.prerequisite_view.create_migration_plan.click()
-
-    @can_skip_badness_test  # because it loops over and over as it cannot handle the modal
-    def resetter(self):
-        # Reset the view
-        self.view.browser.refresh()
