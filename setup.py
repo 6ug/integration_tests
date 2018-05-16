@@ -126,6 +126,8 @@ setup(
             ('generic_object_definitions = '
                 'cfme.generic_objects.definition:GenericObjectDefinitionCollection'),
             'generic_objects = cfme.generic_objects.instance:GenericObjectInstanceCollection',
+            'infrastructure_mapping = cfme.v2v.migrations:InfrastructureMappingCollection',
+            'migration_plan = cfme.v2v.migrations:MigrationPlanCollection',
             'groups = cfme.configure.access_control:GroupCollection',
             'infra_providers = cfme.infrastructure.provider:InfraProviderCollection',
             'hosts = cfme.infrastructure.host:HostCollection',
