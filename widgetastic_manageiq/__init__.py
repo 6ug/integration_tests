@@ -4051,3 +4051,48 @@ class LineChart(Widget, ClickableMixin):
         for row in self.tooltip.rows():
             tooltip_data.update({row[0].text: row[1].text})
         return tooltip_data
+
+
+class HiddenFileInput(BaseFileInput):
+    """Uploads file via hidden input form field
+    Prequesite:
+        Type of input field should be file (type='file')
+    """
+    def fill(self, filepath):
+        self.browser.set_attribute("style", "display;", self)
+        self.browser.send_keys(filepath, self)
+
+    @property
+    def is_displayed(self):
+        self.browser.set_attribute("style", "display;", self)
+        return self.browser.is_displayed(self)
+
+
+class MigrationList(Widget, ClickableMixin):
+
+    @ParametrizedView.nested
+    class list(ParametrizedView):  # noqa
+        PARAMETERS = ("item_name",)
+        list_item = Text(
+            ParametrizedLocator('.//div/span/*[normalize-space(.)={item_name|quote}]'))
+
+        def list_click(self):
+            """Clicks the list item with this name."""
+
+            return self.list_item.click()
+
+        def is_displayed(self):
+            """Returns True if the service is displayed."""
+
+            return self.list_item.is_displayed
+
+    def click_at(self, item_name):
+        """Clicks the list item with this name.
+        Args:
+            item_name: Name of the item
+        """
+
+        return self.list(item_name).list_click()
+
+    def is_displayed(self, item_name):
+        return self.list(item_name).is_displayed()
